@@ -6,7 +6,7 @@
 
 #include <cstring>
 
-#include "../crc/crc.h"
+#include "crc.h"
 
 namespace figure {
 
