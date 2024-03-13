@@ -30,7 +30,7 @@ class ProtocolParser {
 
   /// @brief Process all new elements in the buffer and call associated callbacks.
   /// @param latest_idx index to the latest element in the buffer.
-  void process(uint32_t latest_idx);
+  void process(int32_t latest_idx);
 
   /// @brief Register a callback to be called when a packet with the given frame_id is received.
   /// @param frame_id The frame_id to register the callback for.

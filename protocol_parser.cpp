@@ -14,7 +14,6 @@ uint8_t* ProtocolParser::generatePacket(const uint8_t* buffer, const uint32_t bu
                                         const uint8_t frame_id, uint8_t* gen_packet_size) {
   // construct a packet with the given data bytes + 2 crc bytes + 2 start bytes + 1 frame id + 1
   // payload length
-  memset(gen_packet_buffer_, 0, kMaxPacketSize);  // Clear the buffer
   *gen_packet_size = buffer_size + kNumPrePayloadBytes + kNumCrcBytes;
   gen_packet_buffer_[0] = kStartByte1;
   gen_packet_buffer_[1] = kStartByte2;
@@ -29,7 +28,12 @@ uint8_t* ProtocolParser::generatePacket(const uint8_t* buffer, const uint32_t bu
 }
 
 // NOLINTNEXTLINE(readability-function-cognitive-complexity)
-void ProtocolParser::process(const uint32_t latest_idx) {
+void ProtocolParser::process(const int32_t latest_idx) {
+  // Check that the index is within the buffer size
+  if (latest_idx < 0 || latest_idx >= buffer_size_) {
+    // TODO(kyle-figure): Track this error
+    return;
+  }
   tail_ = (latest_idx + 1) % buffer_size_;
   if (head_ == tail_) {
     // No new data to process
@@ -54,13 +58,14 @@ void ProtocolParser::process(const uint32_t latest_idx) {
     // Loop through buffer_ beginning at start_index and find the start of a packet
     for (int i = start_index; i < end_index; i++) {
       if (buffer_[i % buffer_size_] != kStartByte1) {
-        // Continue searching for start byte
         if (i + 1 == end_index) {
           // Reached the end of the buffer without finding a start byte.
           // Discard any bytes that have been processed by setting the head_ to tail_.
           head_ = tail_;
           return;
         }
+
+        // Continue searching for start byte
         continue;
       }
 
@@ -96,15 +101,8 @@ void ProtocolParser::process(const uint32_t latest_idx) {
 
       // Copy the packet into the local buffer
       // This is required for the crc16 function
-      if ((i % buffer_size_) < tail_) {
-        // TODO(kyle-figure): Remove this to only copy into the local buffer if the packet wraps
-        std::memcpy(packet_buffer_, buffer_ + (i % buffer_size_), packet_size);
-      } else {
-        // Packet wraps around. Copy the packet in two parts.
-        std::memcpy(packet_buffer_, buffer_ + (i % buffer_size_),
-                    buffer_size_ - (i % buffer_size_));
-        std::memcpy(packet_buffer_ + (buffer_size_ - (i % buffer_size_)), buffer_,
-                    packet_size - (buffer_size_ - (i % buffer_size_)));
+      for (int j = 0; j < packet_size; j++) {
+        packet_buffer_[j] = buffer_[(i + j) % buffer_size_];
       }
 
       // Now that the packet is in the local buffer, we can parse it normally without worrying about
