@@ -44,7 +44,7 @@ size_t ProtocolParser::generatePacketNoCopy(uint8_t* dst_buf, const size_t dst_b
   dst_buf[3] = src_buf_size;  // payload length
   std::memcpy(dst_buf + kNumPrePayloadBytes, src_buf, src_buf_size);
   // Calculate the crc on the packet and overhead bytes
-  uint16_t crc = lib::crc16(dst_buf, src_buf_size + kNumPrePayloadBytes);
+  uint16_t crc = crc16(dst_buf, src_buf_size + kNumPrePayloadBytes);
   dst_buf[src_buf_size + kNumPrePayloadBytes] = crc >> 8;        // NOLINT
   dst_buf[src_buf_size + kNumPrePayloadBytes + 1] = crc & 0xFF;  // NOLINT
 
@@ -203,7 +203,7 @@ bool ProtocolParser::processSingleFrame(const uint8_t* buffer, size_t buffer_siz
       }
 
       const size_t kCrcOffset = payload_length + kNumHeaderBytes;
-      uint16_t calculated_crc = lib::crc16(packet_buffer, payload_length + kNumHeaderBytes);
+      uint16_t calculated_crc = crc16(packet_buffer, payload_length + kNumHeaderBytes);
       uint16_t received_crc =
           ((uint16_t)packet_buffer[kCrcOffset] << 8) | packet_buffer[kCrcOffset + 1U];
 
